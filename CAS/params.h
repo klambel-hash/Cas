@@ -15,7 +15,7 @@ static const char PARAMS_ID[PARAMS_ID_SIZE] = "128g\0";
 #define D 81
 #define Mu 162
 
-#define WIT_WEIGHT 128
+#define WIT_WEIGHT 13
 
 
 

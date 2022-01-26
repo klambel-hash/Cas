@@ -1,6 +1,6 @@
 
-#ifndef SRC_WAVE_SIGN_H_
-#define SRC_WAVE_SIGN_H_
+#ifndef SRC_WAVE_PRESIGN_H_
+#define SRC_WAVE_PRESIGN_H_
 
 #include <stdlib.h>
 #include <string.h>
@@ -45,4 +45,6 @@ void decodeU(uint8_t *e, uint8_t *sU, uint8_t *eV, mf3 *HU, wave_sk_t *sk,
 void presign(f3_vector *statement, f3_vector *signature, f3_vector *message_hash, const uint8_t seed_salt,
 		const uint8_t *message, const size_t mlen, wave_sk_t *sk, mf3 *MM);
 
-#endif /* SRC_WAVE_SIGN_H_ */
+void sign(f3_vector *signature, f3_vector *message_hash, const uint8_t seed_salt, const uint8_t *message, const size_t mlen, wave_sk_t *sk, mf3 *MM);
+
+#endif /* SRC_WAVE_PRESIGN_H_ */

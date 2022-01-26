@@ -204,7 +204,60 @@ void presign(f3_vector *statement, f3_vector *signature, f3_vector *message_hash
 	f3_vector_add(&test3, statement, &test1);
 	//f3_vector_print_big(&test1);
 	for (size_t b = 0; b < N-K; b++){
-		salt[b]=f3_vector_get_coeff(&test2, b);
+		salt[b]=f3_vector_get_coeff(&test1, b);
+	}
+	//printf("\n======= Presign %u ========\n", seed_salt);
+
+
+
+	//randombytes(salt, SALT_SIZE);
+	uint8_t seed;
+	randombytes(&seed, 1);
+	hash_message(message_hash, message, mlen, salt, SALT_SIZE);
+	prng_t *PRNG = prng_init(seed);
+	sign_wave(signature, message_hash, sk, PRNG);
+	prng_clear(PRNG);
+	f3_vector_free(&test1);
+	f3_vector_free(&test2);
+	f3_vector_free(&test3);
+	f3_vector_free(&test4);
+	f3_vector_free(&r);
+	prng_clear(PRNG1);
+}
+
+
+
+
+
+
+
+void sign(f3_vector *signature, f3_vector *message_hash, const uint8_t seed_salt, const uint8_t *message, const size_t mlen, wave_sk_t *sk, mf3 *MM) {
+		f3_vector test1 = f3_vector_new(N-K);
+	f3_vector test2 = f3_vector_new(N-K);
+	f3_vector test3 = f3_vector_new(N - K);
+	f3_vector test4 = f3_vector_new(K);
+	uint8_t * aa= (uint8_t*) malloc((N-K)* sizeof(uint8_t));
+	uint8_t salt[SALT_SIZE] = { 0 };
+	prng_t *PRNG1 = prng_init(seed_salt);
+	f3_vector r = f3_vector_new(N);
+	f3_vector_rand(&r, PRNG1);
+	for (size_t b = 0; b < N-K; b++){
+		uint8_t bb=f3_vector_get_coeff(&r, b);
+		f3_vector_setcoeff(&test1, b, bb);
+		}
+	for (size_t b = 0; b < K; b++){
+		uint8_t bb=f3_vector_get_coeff(&r, N-K+b);
+		f3_vector_setcoeff(&test4, b, bb);
+	}
+	mf3_mv_mul(mf3_transpose(MM), &test4, aa);
+	f3_vector_set_from_array(&test2,aa,N-K);
+	f3_vector_add(&test1, &test2, &test3);
+	//printf("\n   Presign   \n ");
+	
+	//f3_vector_add(&test3, statement, &test1);
+	//f3_vector_print_big(&test1);
+	for (size_t b = 0; b < N-K; b++){
+		salt[b]=f3_vector_get_coeff(&test3, b);
 	}
 	//printf("\n======= Presign %u ========\n", seed_salt);
 

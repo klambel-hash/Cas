@@ -22,5 +22,9 @@ int verify(const uint8_t *salt, const uint8_t *message, const size_t mlen,
 
 int preverify(f3_vector *statement, const uint8_t seed_salt, const uint8_t *message, const size_t mlen, const wave_word *t_0, const wave_word *t_1, mf3 *pk);
 
+int verif(const uint8_t seed_salt, const uint8_t *message, const size_t mlen, const wave_word *t_0, const wave_word *t_1, mf3 *pk);
+
+
+
 //int Nverify(f3_vector *hash, const f3_vector *truncated_signature, mf3 *pk);
 #endif /* SRC_WAVE_VERIFY_H_ */

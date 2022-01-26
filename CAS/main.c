@@ -28,7 +28,9 @@ void print_signature(f3_vector *sig) {
 
 double timekey_f[ITERATIONS];
 double time_presign_f[ITERATIONS];
+double time_sign_f[ITERATIONS];
 double time_preverify_f[ITERATIONS];
+double time_verif_f[ITERATIONS];
 double time_adapt_f[ITERATIONS];
 double time_extract_f[ITERATIONS];
 
@@ -87,6 +89,7 @@ int main(void) {
 		f3_vector presignature = f3_vector_new(N);
 
 		f3_vector m_hash = f3_vector_new(N - K);
+		f3_vector m_hash1 = f3_vector_new(N - K);
 		uint8_t mi[MAXMLEN] = { 0 };
 /**************************************** Key generation *******************************************/		
 		start = clock();
@@ -97,8 +100,9 @@ int main(void) {
 		mf3 *MM=pk;
 /************************************************************************************************/	
 
-		uint8_t seed_salt, seed_wit;
+		uint8_t seed_salt,seed_salt1, seed_wit;
 		randombytes(&seed_salt, 1);
+		randombytes(&seed_salt1, 1);
 		randombytes(&seed_wit, 1);
 		//uint8_t salt[SALT_SIZE] = { 0 };
 		prng_t  *PRNG = prng_init(seed_wit);
@@ -124,8 +128,8 @@ int main(void) {
 
 /****************************************    Message    ****************************************/
 
-		f3_vector_zero(&signature);
 		f3_vector_zero(&m_hash);
+		f3_vector_zero(&m_hash1);
 		memset(mi, 0, MAXMLEN * sizeof(uint8_t));
 		randombytes(mi, MAXMLEN);
 /************************************    preSignature    ****************************************/
@@ -167,6 +171,8 @@ int main(void) {
 			printf("\n Preverification success \n");
 		}
 
+
+
 /*********************************** Adaptor *************************************/
 		start = clock();
 		adapt(&presignature, seed_salt,  &witness, &signature, &sig_r);
@@ -190,6 +196,48 @@ int main(void) {
 		else{
 			printf("\n Extraction success \n");
 		}
+
+
+
+
+
+
+/************************************    Signature    ****************************************/
+
+		start = clock();
+		sign(&signature, &m_hash1, seed_salt1, mi, MAXMLEN, &sk, MM);
+		end = clock();
+		time_sign_f[i] = (double) (end - start) * 1000.0 / CLOCKS_PER_SEC;
+
+		//size_t alloc = (1 + ((K - 1)) / WORD_LENGTH);
+		wave_word b_r0[(1 + ((K - 1)) / WORD_LENGTH)] = { 0 };
+		wave_word b_r1[(1 + ((K - 1)) / WORD_LENGTH)] = { 0 };
+
+		memcpy(b_r0, signature.r0 + 45, 88 * sizeof(wave_word));
+		memcpy(b_r1, signature.r1 + 45, 88 * sizeof(wave_word));
+		shift7(b_r0, alloc);
+		shift7(b_r1, alloc);
+
+		f3_vector b = f3_vector_new(K);
+		memcpy(b.r0, signature.r0 + 45, 88 * sizeof(wave_word));
+		memcpy(b.r1, signature.r1 + 45, 88 * sizeof(wave_word));
+		shift7(b.r0, b.alloc);
+		shift7(b.r1, b.alloc);
+
+/************************************    Verification    ****************************************/
+
+		start = clock();
+		res = verif(seed_salt1, mi, MAXMLEN, b_r0, b_r1, MM);
+		end = clock();
+		time_verif_f[i] = (double) (end - start) * 1000.0 / CLOCKS_PER_SEC;
+
+		if (res != 1) {
+			printf("\nfail...\n");
+		}
+		else{
+			printf("\n verification success \n");
+		}	
+
 /*******************************************************************************************/
 
 		f3_vector_free(&test1);
@@ -206,6 +254,7 @@ int main(void) {
 		f3_vector_free(&presignature);
 		f3_vector_free(&sig_r);
 		f3_vector_free(&m_hash);
+		f3_vector_free(&m_hash1);
 		f3_vector_free(&a);
 		prng_clear(PRNG);
 		//printf(".\n");
@@ -215,16 +264,22 @@ int main(void) {
 	bubbleSort(timekey_f, ITERATIONS - 1);
 	bubbleSort(time_preverify_f, ITERATIONS - 1);
 	bubbleSort(time_presign_f, ITERATIONS - 1);
+	bubbleSort(time_verif_f, ITERATIONS - 1);
+	bubbleSort(time_sign_f, ITERATIONS - 1);
 	bubbleSort(time_adapt_f, ITERATIONS - 1);
 	bubbleSort(time_extract_f, ITERATIONS - 1);
 	double presign_avg = 0;
 	double preverify_avg = 0;
+	double sign_avg = 0;
+	double verif_avg = 0;
 	double keygen_avg = 0;
 	double adapt_avg = 0;
 	double extract_avg = 0;
 	for (int i = 0; i < ITERATIONS; i++) {
 		presign_avg += time_presign_f[i];
 		preverify_avg += time_preverify_f[i];
+		sign_avg += time_presign_f[i];
+		verif_avg += time_preverify_f[i];
 		keygen_avg += timekey_f[i];
 		adapt_avg += time_adapt_f[i];
 		extract_avg += time_extract_f[i];
@@ -241,6 +296,14 @@ int main(void) {
 	printf("preverify() MEDIAN %f milli-seconds \n", time_preverify_f[ITERATIONS / 2]);
 
 	printf("preverify() AVG  %f milli-seconds \n", (preverify_avg / ITERATIONS));
+
+	printf("sign() MEDIAN %f milli-seconds\n", time_sign_f[ITERATIONS / 2]);
+
+	printf("sign() AVG  %f milli-seconds \n", (sign_avg / ITERATIONS));
+
+	printf("verif() MEDIAN %f milli-seconds \n", time_verif_f[ITERATIONS / 2]);
+
+	printf("verif() AVG  %f milli-seconds \n", (verif_avg / ITERATIONS));
 
 	printf("adapt() MEDIAN %f milli-seconds \n", time_adapt_f[ITERATIONS / 2]);
 
